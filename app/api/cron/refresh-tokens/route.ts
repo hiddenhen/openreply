@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
       const { accessToken: newToken, expiresIn } =
         await refreshLongLivedToken(currentToken);
       const encryptedToken = encryptToken(newToken);
-      const newExpiry = new Date(Date.now() + expiresIn * 1000);
+      const newExpiry = expiresIn === null ? null : new Date(Date.now() + expiresIn * 1000);
 
       await prisma.instagramAccount.update({
         where: { id: account.id },

@@ -1,7 +1,11 @@
-import { getMetaGraphApiVersion, requireEnv } from "@/lib/env";
+import { getMetaGraphApiVersion, isUnifiedLogin, requireEnv } from "@/lib/env";
 
+// Unified login tokens are system user tokens, valid only on graph.facebook.com.
+// The Instagram endpoints keep the same paths there.
 function instagramGraphBase() {
-  return `https://graph.instagram.com/${getMetaGraphApiVersion()}`;
+  return isUnifiedLogin()
+    ? facebookGraphBase()
+    : `https://graph.instagram.com/${getMetaGraphApiVersion()}`;
 }
 
 function facebookGraphBase() {
@@ -664,16 +668,79 @@ export async function getConversationMessages(
   return data.messages?.data ?? [];
 }
 
-export async function getUserInfo(accessToken: string): Promise<InstagramUser> {
-  const url = new URL(`${instagramGraphBase()}/me`);
+// A unified login token belongs to a system user, not to one Instagram
+// account: one login can grant several. They are listed from the assets the
+// client assigned during login, which comes back empty unless the login
+// configuration includes business_management (issue #104).
+export async function getAssignedInstagramAccounts(
+  accessToken: string
+): Promise<{ id: string; username?: string }[]> {
+  const accounts: { id: string; username?: string }[] = [];
+  const seen = new Set<string>();
+  let after: string | undefined;
+  // Follow cursor pages on our fixed Graph host, never an API-provided URL
+  // that might forward the access token to another origin.
+  for (let page = 0; page < 100; page++) {
+    const url = new URL(`${facebookGraphBase()}/me/assigned_instagram_accounts`);
+    url.searchParams.set("fields", "id,username");
+    url.searchParams.set("limit", "100");
+    if (after) url.searchParams.set("after", after);
+    const data = await handleResponse<{
+      data?: { id: string; username?: string }[];
+      paging?: { next?: string; cursors?: { after?: string } };
+    }>(await fetch(url.toString(), {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      cache: "no-store",
+    }));
+    for (const account of data.data ?? []) {
+      if (!/^\d+$/.test(account.id)) throw new Error("Meta returned an invalid Instagram account ID");
+      if (!accounts.some((saved) => saved.id === account.id)) accounts.push(account);
+    }
+    if (!data.paging?.next) break;
+    const next = data.paging.cursors?.after;
+    if (!next || seen.has(next) || page === 99) {
+      throw new Error("Unable to finish reading the Instagram accounts shared with this app");
+    }
+    seen.add(next);
+    after = next;
+  }
+  if (!accounts.length) {
+    throw new Error(
+      "No Instagram account is assigned to this login. Add business_management to the Meta login configuration and connect again."
+    );
+  }
+  return accounts;
+}
+
+// With an Instagram Login token `me` is the Instagram account. A unified login
+// token needs the account ID itself; without one, fall back to the first
+// account the login granted.
+async function instagramNode(
+  accessToken: string,
+  igUserId?: string
+): Promise<string> {
+  if (!isUnifiedLogin()) return "me";
+  return igUserId ?? (await getAssignedInstagramAccounts(accessToken))[0].id;
+}
+
+export async function getUserInfo(
+  accessToken: string,
+  igUserId?: string
+): Promise<InstagramUser> {
+  const node = await instagramNode(accessToken, igUserId);
+  const url = new URL(`${instagramGraphBase()}/${node}`);
   url.searchParams.set(
     "fields",
-    "id,user_id,username,name,profile_picture_url,followers_count"
+    isUnifiedLogin()
+      ? "id,username,name,profile_picture_url,followers_count"
+      : "id,user_id,username,name,profile_picture_url,followers_count"
   );
   url.searchParams.set("access_token", accessToken);
 
   const response = await fetch(url.toString());
-  return handleResponse<InstagramUser>(response);
+  const user = await handleResponse<InstagramUser>(response);
+  // On graph.facebook.com `id` already is the professional account ID.
+  return isUnifiedLogin() ? { ...user, user_id: user.id } : user;
 }
 
 const MEDIA_FIELDS =
@@ -684,9 +751,11 @@ const MEDIA_PAGE_SIZE = 100;
 
 export async function getUserMedia(
   accessToken: string,
-  limit = 25
+  limit = 25,
+  igUserId?: string
 ): Promise<InstagramMedia[]> {
-  const url = new URL(`${instagramGraphBase()}/me/media`);
+  const node = await instagramNode(accessToken, igUserId);
+  const url = new URL(`${instagramGraphBase()}/${node}/media`);
   url.searchParams.set("fields", MEDIA_FIELDS);
   url.searchParams.set("limit", limit.toString());
   url.searchParams.set("access_token", accessToken);
@@ -704,11 +773,13 @@ export async function getUserMedia(
  */
 export async function getAllUserMedia(
   accessToken: string,
-  max = 500
+  max = 500,
+  igUserId?: string
 ): Promise<InstagramMedia[]> {
   const results: InstagramMedia[] = [];
 
-  const first = new URL(`${instagramGraphBase()}/me/media`);
+  const node = await instagramNode(accessToken, igUserId);
+  const first = new URL(`${instagramGraphBase()}/${node}/media`);
   first.searchParams.set("fields", MEDIA_FIELDS);
   first.searchParams.set("limit", String(Math.min(MEDIA_PAGE_SIZE, max)));
   first.searchParams.set("access_token", accessToken);
@@ -827,9 +898,19 @@ export async function getFollowerCountSeries(
   }
 }
 
+// Unified Login uses a business integration system-user token, not an
+// Instagram user token. Null records no scheduled expiry without inventing
+// a date; revoked tokens still fail normally and require reauthorization.
+
 export async function getLongLivedToken(
   shortLivedToken: string
-): Promise<{ accessToken: string; expiresIn: number }> {
+): Promise<{ accessToken: string; expiresIn: number | null }> {
+  if (isUnifiedLogin()) {
+    return {
+      accessToken: shortLivedToken,
+      expiresIn: null,
+    };
+  }
   const url = new URL(`${instagramGraphBase()}/access_token`);
   url.searchParams.set("grant_type", "ig_exchange_token");
   url.searchParams.set("client_secret", requireEnv("INSTAGRAM_APP_SECRET"));
@@ -846,7 +927,10 @@ export async function getLongLivedToken(
 
 export async function refreshLongLivedToken(
   longLivedToken: string
-): Promise<{ accessToken: string; expiresIn: number }> {
+): Promise<{ accessToken: string; expiresIn: number | null }> {
+  if (isUnifiedLogin()) {
+    throw new Error("Unified Login token needs reauthorization; reconnect the Instagram account in Settings.");
+  }
   const url = new URL(`${instagramGraphBase()}/refresh_access_token`);
   url.searchParams.set("grant_type", "ig_refresh_token");
   url.searchParams.set("access_token", longLivedToken);
@@ -873,7 +957,9 @@ export async function subscribeInstagramAccountToWebhooks(
         Authorization: `Bearer ${accessToken}`,
       },
       body: JSON.stringify({
-        subscribed_fields: ["comments", "messages"],
+        subscribed_fields: isUnifiedLogin()
+          ? ["comments", "messages", "messaging_postbacks"]
+          : ["comments", "messages"],
       }),
     }
   );

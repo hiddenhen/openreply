@@ -5,7 +5,12 @@ import {
   randomBytes,
   timingSafeEqual,
 } from "crypto";
-import { getEncryptionKeyHex, requireEnv } from "@/lib/env";
+import {
+  getEncryptionKeyHex,
+  getMetaGraphApiVersion,
+  isUnifiedLogin,
+  requireEnv,
+} from "@/lib/env";
 
 // Instagram API with Instagram Login authorizes on www.instagram.com. The old
 // api.instagram.com/oauth/authorize host belonged to the retired Basic Display
@@ -88,6 +93,21 @@ export function verifyOAuthState(state: string | null): OAuthStatePayload | null
 }
 
 export function getAuthorizationUrl(redirectUri: string, state: string): string {
+  if (isUnifiedLogin()) {
+    // The login configuration carries the permissions and the asset picker,
+    // so there is no scope parameter here.
+    const params = new URLSearchParams({
+      client_id: requireEnv("INSTAGRAM_APP_ID"),
+      config_id: requireEnv("META_LOGIN_CONFIG_ID"),
+      redirect_uri: redirectUri,
+      response_type: "code",
+      override_default_response_type: "true",
+      prompt: "login",
+      state,
+    });
+    return `https://www.facebook.com/${getMetaGraphApiVersion()}/dialog/oauth?${params.toString()}`;
+  }
+
   const params = new URLSearchParams({
     client_id: requireEnv("INSTAGRAM_APP_ID"),
     redirect_uri: redirectUri,
@@ -103,7 +123,31 @@ export function getAuthorizationUrl(redirectUri: string, state: string): string 
 export async function exchangeCodeForToken(
   code: string,
   redirectUri: string
-): Promise<{ accessToken: string; userId: string }> {
+): Promise<{ accessToken: string; userId: string; expiresIn?: number }> {
+  if (isUnifiedLogin()) {
+    // Returns a system user token with no expiry. It carries no Instagram
+    // account ID; getUserInfo resolves that from the token's assigned assets.
+    const url = new URL(
+      `https://graph.facebook.com/${getMetaGraphApiVersion()}/oauth/access_token`
+    );
+    url.searchParams.set("client_id", requireEnv("INSTAGRAM_APP_ID"));
+    url.searchParams.set("client_secret", requireEnv("INSTAGRAM_APP_SECRET"));
+    url.searchParams.set("redirect_uri", redirectUri);
+    url.searchParams.set("code", code);
+    const response = await fetch(url.toString());
+    const data = await response.json();
+    if (!response.ok || !data.access_token) {
+      // Do not expose the response body: it can contain credentials.
+      throw new Error("Meta token exchange failed. Check the app credentials and redirect URL.");
+    }
+    return {
+      accessToken: data.access_token,
+      userId: "",
+      ...(typeof data.expires_in === "number" && data.expires_in > 0
+        ? { expiresIn: data.expires_in } : {}),
+    };
+  }
+
   const body = new URLSearchParams({
     client_id: requireEnv("INSTAGRAM_APP_ID"),
     client_secret: requireEnv("INSTAGRAM_APP_SECRET"),
