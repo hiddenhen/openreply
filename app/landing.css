@@ -809,3 +809,10 @@
     padding-inline: 20px;
   }
 }
+
+/* Keep optional sponsor information available without crowding setup. */
+.or-sponsor-details { width: 100%; color: #626262; filter: grayscale(1); }
+.or-sponsor-details > summary { cursor: pointer; font-size: 0.8rem; }
+.or-sponsor-details[open] > :not(summary) { margin-top: 1rem; }
+.or-sponsor-details .or-provider-zernio { background: #f5f5f5; border-color: #d4d4d4; }
+.or-sponsor-details article, .or-sponsor-details details { max-width: 48rem; padding: 1rem; }

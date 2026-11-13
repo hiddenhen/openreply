@@ -1,7 +1,5 @@
 "use client";
 
-'use client';
-
 import { useI18n } from "@/lib/i18n/provider";
 import { useCallback, useEffect, useState } from 'react';
 import Image from 'next/image';
@@ -51,10 +49,12 @@ export function ZernioConnection({ canManage }: { canManage: boolean }) {
   }
 
   return (
-    <section className="zernio-sponsor rounded-xl border p-5 sm:p-6" aria-labelledby="zernio-heading">
+    <details className="zernio-sponsor rounded-xl border p-4 sm:p-6">
+      <summary className="cursor-pointer text-sm font-medium">Zernio · {t("Optional connection provider")}</summary>
+      <div className="pt-5">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div><h2 id="zernio-heading" className="text-base font-semibold">{t("Easier Instagram setup")}</h2><p className="mt-1 text-sm">{t("Optional connection provider")}</p></div>
-        <a href={zernioLink({ placement: 'settings-logo' })} target="_blank" rel="noopener noreferrer" aria-label={t("Zernio, OpenReply sponsor")}><Image src="/brand/zernio-primary.svg" alt="Zernio" width={106} height={32} className="h-auto" /></a>
+        <a href={zernioLink({ placement: 'settings-logo' })} target="_blank" rel="noopener noreferrer" aria-label={t("Zernio, OpenReply sponsor")}><Image src="/brand/zernio-primary.svg" alt="Zernio" width={106} height={32} className="h-auto grayscale" /></a>
       </div>
       <p className="mt-4 text-sm leading-6">{t("Connect Instagram without creating your own Meta developer app. Zernio is a paid service and an OpenReply sponsor. Your campaigns and hosting stay in OpenReply.")}</p>
       <p className="mt-2 flex flex-wrap gap-x-4 gap-y-2 text-sm"><a className="underline underline-offset-4" href={zernioLink({ path: '/signup', placement: 'settings-signup' })} target="_blank" rel="noopener noreferrer">{t("Get a Zernio API key")}</a><a className="underline underline-offset-4" href={zernioLink({ path: '/pricing', placement: 'settings-pricing' })} target="_blank" rel="noopener noreferrer">{t("View pricing")}</a></p>
@@ -82,6 +82,7 @@ export function ZernioConnection({ canManage }: { canManage: boolean }) {
           <button disabled={busy} onClick={() => { if (confirm(t("Remove the Zernio key and this OpenReply webhook? Disconnect its Instagram accounts from OpenReply first."))) void act({ method: 'DELETE' }); }} className="text-xs underline underline-offset-4 disabled:opacity-50">{t("Remove Zernio connection")}</button>
         </div>}
       </>}
-    </section>
+      </div>
+    </details>
   );
 }
