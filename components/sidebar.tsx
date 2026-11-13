@@ -96,11 +96,13 @@ export default function Sidebar({
           <div className="mb-4"><LanguageSwitcher /></div>
           <p className="text-sm text-foreground truncate">{workspaceName}</p>
           <p className="text-xs text-muted">{t("Self-hosted")}</p>
+          <details className="mt-4 text-xs text-muted">
+            <summary className="cursor-pointer">{t("Supported by")} Zernio</summary>
           <a
             href={zernioLink({ placement: "sidebar" })}
             target="_blank"
             rel="sponsored noopener noreferrer"
-            className="mt-4 flex items-center gap-3 text-xs text-muted hover:text-foreground"
+            className="mt-2 flex items-center gap-3 text-xs text-muted hover:text-foreground"
           >
             <span>{t("Supported by")}</span>
             <Image
@@ -108,9 +110,10 @@ export default function Sidebar({
               alt="Zernio"
               width={64}
               height={20}
-              className="m-2"
+              className="my-2 grayscale"
             />
           </a>
+          </details>
         </div>
       </aside>
     </>
