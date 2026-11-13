@@ -4,13 +4,15 @@ This fork extends OpenReply for Meta's October 2026 Unified Login transition. St
 
 ## Feature status
 
-| Searchable feature title | Status | Scope and limits |
-| --- | --- | --- |
-| Meta OAuth Updated October 2026 — Instagram API with Unified Login | Implemented; one live pilot verified | Facebook Login for Business configuration, server-side code exchange, encrypted tokens, signed workspace state, selected-account Graph requests, comments/messages/postback subscriptions. A real comment-to-DM succeeded on its first attempt. Other message flows remain to be tested. [Setup details](unified-login.md). |
-| Multi-Account Instagram Management | Implemented; multi-account logic covered by automated tests | Multiple professional Instagram accounts in one workspace. Unified Login enumerates all granted assigned accounts, including cursor pages. Only one account has been tested live so far. |
-| Multi-Company Workspaces and Company Switching | Planned | Workspace records and roles exist, but current request context selects the user's earliest membership. There is no complete company creation/switching workflow. Do not advertise operational multi-company support yet. |
-| Shared Instagram Accounts Across Multiple Companies | Planned; currently blocked by the data model | Instagram account IDs are globally unique and each account belongs to one workspace. Cross-workspace reconnects are deliberately rejected. Sharing requires explicit company-account associations, permissions and event/campaign routing. |
-| Multi-User Company Access and Team Roles | Existing workspace-level foundation | Owner, Admin and Member roles and email invitations exist. Access is workspace-wide, not limited to chosen Instagram accounts. On a restricted self-hosted installation, invited emails must also be allowed by ALLOWED_EMAILS. Company switching and least-privilege account assignments require additional work. |
+| Searchable feature title | Status | Priority | Scope and limits | Recommended model at 33% budget |
+| --- | --- | --- | --- | --- |
+| Meta OAuth Updated October 2026 — Instagram API with Unified Login | Implemented; one live pilot verified | Maintenance | Facebook Login for Business configuration, server-side code exchange, encrypted tokens, signed workspace state, selected-account Graph requests, comments/messages/postback subscriptions. A real comment-to-DM succeeded on its first attempt. Other message flows remain to be tested. [Setup details](unified-login.md). | Lightweight model for docs, diagnostics and small fixes; stronger model only for Meta permission or token changes. |
+| Multi-Account Instagram Management | Implemented; multi-account logic covered by automated tests | High | Multiple professional Instagram accounts in one workspace. Unified Login enumerates all granted assigned accounts, including cursor pages. Thirteen accounts are connected in the pilot workspace; only one has live delivery validation. | Lightweight model for onboarding copy and UI; stronger model for API, queue or account-routing changes. |
+| Multi-Company Workspaces and Company Switching | Planned | High | Workspace records and roles exist, but current request context selects the user's earliest membership. There is no complete company creation/switching workflow. Do not advertise operational multi-company support yet. | Stronger model recommended: this changes authentication, tenant isolation and nearly every data route. |
+| Shared Instagram Accounts Across Multiple Companies | Planned; currently blocked by the data model | High | Instagram account IDs are globally unique and each account belongs to one workspace. Cross-workspace reconnects are deliberately rejected. Sharing requires explicit company-account associations, permissions and event/campaign routing. | Stronger model recommended: authorization and duplicate-delivery mistakes could expose data or send unintended DMs. |
+| Multi-User Company Access and Team Roles | Existing workspace-level foundation | Medium | Owner, Admin and Member roles and email invitations exist. Access is workspace-wide, not limited to chosen Instagram accounts. On a restricted self-hosted installation, invited emails must also be allowed by ALLOWED_EMAILS. Company switching and least-privilege account assignments require additional work. | Lightweight model for invitation copy and role labels; stronger model for account-level authorization. |
+| Account-Level Assignment and Teammate Permissions | Planned | High | Let admins assign selected Instagram accounts to specific members while keeping campaigns, inboxes, logs and credentials scoped correctly. | Stronger model recommended; security-sensitive access control. |
+| Company Reporting, Quotas and Audit Trail | Planned | Medium | Attribute campaigns, DMs, failures, clicks, API keys and operational events to a company and preserve an audit history for membership and account changes. | Lightweight model for reports; stronger model for schema and event-boundary design. |
 
 ## How to connect more Instagram accounts
 
@@ -34,3 +36,9 @@ An additional account does not require another OpenReply server or another Meta 
 - Audit campaign, inbox, logs, analytics, API/MCP keys, jobs and token lifecycle for tenant boundaries. Test cross-company denial, revoked membership, shared-account removal and concurrent connections before release.
 
 These are roadmap notes, not an implementation commitment or permission to expose existing accounts to teammates. Until this work is implemented, use the current workspace only for people who should access all of its connected accounts.
+
+## Compute and model guidance
+
+The assistant cannot read an exact credit meter. The current planning assumption is the owner's stated 33% remaining. I will warn before work that is likely to consume a large share of that budget, especially repository-wide refactors, multi-step browser onboarding, production builds, or repeated web research.
+
+Use a lightweight model for explanations, documentation edits, copy changes, straightforward UI changes, read-only checks and small test updates. Reserve a stronger model for Meta authentication, tenant isolation, account-level permissions, database migrations, webhook routing, security review and production deployment. Before committing to a larger task, choose whether correctness risk or compute conservation matters more; a smaller staged task is usually safer at this budget.
