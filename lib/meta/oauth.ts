@@ -102,6 +102,7 @@ export function getAuthorizationUrl(redirectUri: string, state: string): string 
       redirect_uri: redirectUri,
       response_type: "code",
       override_default_response_type: "true",
+      prompt: "login",
       state,
     });
     return `https://www.facebook.com/${getMetaGraphApiVersion()}/dialog/oauth?${params.toString()}`;
@@ -122,7 +123,7 @@ export function getAuthorizationUrl(redirectUri: string, state: string): string 
 export async function exchangeCodeForToken(
   code: string,
   redirectUri: string
-): Promise<{ accessToken: string; userId: string }> {
+): Promise<{ accessToken: string; userId: string; expiresIn?: number }> {
   if (isUnifiedLogin()) {
     // Returns a system user token with no expiry. It carries no Instagram
     // account ID; getUserInfo resolves that from the token's assigned assets.
@@ -136,11 +137,15 @@ export async function exchangeCodeForToken(
     const response = await fetch(url.toString());
     const data = await response.json();
     if (!response.ok || !data.access_token) {
-      throw new Error(
-        `Token exchange failed: ${data.error?.message || JSON.stringify(data)}`
-      );
+      // Do not expose the response body: it can contain credentials.
+      throw new Error("Meta token exchange failed. Check the app credentials and redirect URL.");
     }
-    return { accessToken: data.access_token, userId: "" };
+    return {
+      accessToken: data.access_token,
+      userId: "",
+      ...(typeof data.expires_in === "number" && data.expires_in > 0
+        ? { expiresIn: data.expires_in } : {}),
+    };
   }
 
   const body = new URLSearchParams({

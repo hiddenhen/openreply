@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const redirectUri = `${baseUrl}/api/instagram/callback`;
-    const { accessToken: shortLivedToken } = await exchangeCodeForToken(
+    const { accessToken: shortLivedToken, expiresIn: issuedExpiresIn } = await exchangeCodeForToken(
       code,
       redirectUri
     );
@@ -61,7 +61,8 @@ export async function GET(request: NextRequest) {
       : [undefined];
 
     const encryptedToken = encryptToken(longLivedToken);
-    const tokenExpiresAt = new Date(Date.now() + expiresIn * 1000);
+    const lifetime = isUnifiedLogin() ? issuedExpiresIn ?? null : expiresIn;
+    const tokenExpiresAt = lifetime === null ? null : new Date(Date.now() + lifetime * 1000);
     let connected = 0;
 
     for (const accountId of accountIds) {

@@ -675,13 +675,35 @@ export async function getConversationMessages(
 export async function getAssignedInstagramAccounts(
   accessToken: string
 ): Promise<{ id: string; username?: string }[]> {
-  const url = new URL(`${facebookGraphBase()}/me/assigned_instagram_accounts`);
-  url.searchParams.set("fields", "id,username");
-  url.searchParams.set("access_token", accessToken);
-  const data = await handleResponse<{ data?: { id: string; username?: string }[] }>(
-    await fetch(url.toString())
-  );
-  const accounts = data.data ?? [];
+  const accounts: { id: string; username?: string }[] = [];
+  const seen = new Set<string>();
+  let after: string | undefined;
+  // Follow cursor pages on our fixed Graph host, never an API-provided URL
+  // that might forward the access token to another origin.
+  for (let page = 0; page < 100; page++) {
+    const url = new URL(`${facebookGraphBase()}/me/assigned_instagram_accounts`);
+    url.searchParams.set("fields", "id,username");
+    url.searchParams.set("limit", "100");
+    if (after) url.searchParams.set("after", after);
+    const data = await handleResponse<{
+      data?: { id: string; username?: string }[];
+      paging?: { next?: string; cursors?: { after?: string } };
+    }>(await fetch(url.toString(), {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      cache: "no-store",
+    }));
+    for (const account of data.data ?? []) {
+      if (!/^\d+$/.test(account.id)) throw new Error("Meta returned an invalid Instagram account ID");
+      if (!accounts.some((saved) => saved.id === account.id)) accounts.push(account);
+    }
+    if (!data.paging?.next) break;
+    const next = data.paging.cursors?.after;
+    if (!next || seen.has(next) || page === 99) {
+      throw new Error("Unable to finish reading the Instagram accounts shared with this app");
+    }
+    seen.add(next);
+    after = next;
+  }
   if (!accounts.length) {
     throw new Error(
       "No Instagram account is assigned to this login. Add business_management to the Meta login configuration and connect again."
@@ -876,17 +898,17 @@ export async function getFollowerCountSeries(
   }
 }
 
-// System user tokens never expire, so there is nothing to exchange or refresh.
-// Ten years keeps the refresh cron from ever selecting the account.
-const UNIFIED_TOKEN_LIFETIME_SECONDS = 10 * 365 * 24 * 60 * 60;
+// Unified Login uses a business integration system-user token, not an
+// Instagram user token. Null records no scheduled expiry without inventing
+// a date; revoked tokens still fail normally and require reauthorization.
 
 export async function getLongLivedToken(
   shortLivedToken: string
-): Promise<{ accessToken: string; expiresIn: number }> {
+): Promise<{ accessToken: string; expiresIn: number | null }> {
   if (isUnifiedLogin()) {
     return {
       accessToken: shortLivedToken,
-      expiresIn: UNIFIED_TOKEN_LIFETIME_SECONDS,
+      expiresIn: null,
     };
   }
   const url = new URL(`${instagramGraphBase()}/access_token`);
@@ -905,12 +927,9 @@ export async function getLongLivedToken(
 
 export async function refreshLongLivedToken(
   longLivedToken: string
-): Promise<{ accessToken: string; expiresIn: number }> {
+): Promise<{ accessToken: string; expiresIn: number | null }> {
   if (isUnifiedLogin()) {
-    return {
-      accessToken: longLivedToken,
-      expiresIn: UNIFIED_TOKEN_LIFETIME_SECONDS,
-    };
+    throw new Error("Unified Login token needs reauthorization; reconnect the Instagram account in Settings.");
   }
   const url = new URL(`${instagramGraphBase()}/refresh_access_token`);
   url.searchParams.set("grant_type", "ig_refresh_token");
