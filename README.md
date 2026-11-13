@@ -24,6 +24,12 @@ OpenReply is free, MIT-licensed software running on your own infrastructure, wit
 
 > If this saves you a subscription or a weekend of building, a star on the repo genuinely helps other people find it.
 
+## This fork: Meta Unified Login and multi-account Instagram automation
+
+Adds **Meta OAuth Updated October 2026 — Instagram API with Unified Login**, with a successful live comment-to-DM pilot. Supports multiple Instagram accounts within one workspace; adding further accounts still needs live validation.
+
+See [feature status, account onboarding and multi-company roadmap](docs/features-and-roadmap.md) for **Multi-Account Instagram Management**, **Multi-Company Workspaces**, **Shared Instagram Accounts Across Companies**, and **Multi-User Company Access**. Company switching and cross-company account sharing are planned, not available features. Team roles currently apply to the whole workspace.
+
 ## Why this exists
 
 Comment-to-DM is one feature, but every tool that offers it wants a recurring subscription for it. OpenReply makes that workflow available as software you can inspect, modify, and host yourself.
