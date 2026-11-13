@@ -36,9 +36,3 @@ An additional account does not require another OpenReply server or another Meta 
 - Audit campaign, inbox, logs, analytics, API/MCP keys, jobs and token lifecycle for tenant boundaries. Test cross-company denial, revoked membership, shared-account removal and concurrent connections before release.
 
 These are roadmap notes, not an implementation commitment or permission to expose existing accounts to teammates. Until this work is implemented, use the current workspace only for people who should access all of its connected accounts.
-
-## Compute and model guidance
-
-The assistant cannot read an exact credit meter. The current planning assumption is the owner's stated 33% remaining. I will warn before work that is likely to consume a large share of that budget, especially repository-wide refactors, multi-step browser onboarding, production builds, or repeated web research.
-
-Use a lightweight model for explanations, documentation edits, copy changes, straightforward UI changes, read-only checks and small test updates. Reserve a stronger model for Meta authentication, tenant isolation, account-level permissions, database migrations, webhook routing, security review and production deployment. Before committing to a larger task, choose whether correctness risk or compute conservation matters more; a smaller staged task is usually safer at this budget.
