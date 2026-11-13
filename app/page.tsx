@@ -141,7 +141,7 @@ function ReplyPreview() {
 const steps = [
   [
     "Connect your account",
-    "Choose Zernio or your own Meta app, then connect an Instagram Business or Creator account.",
+    "Choose your own Meta app or an optional connection provider, then connect an Instagram Business or Creator account.",
   ],
   [
     "Set up a campaign",
@@ -236,7 +236,6 @@ export default async function Home() {
             <p className="or-hero-note">
               Free software. Self-hosted. Your infrastructure.
             </p>
-            <SponsorCredit placement="landing-hero" />
           </div>
           <ReplyPreview />
         </section>
@@ -325,33 +324,7 @@ export default async function Home() {
                 </p>
               </div>
               <div className="or-provider-grid">
-                <article className="or-provider-zernio">
-                  <div className="or-provider-title">
-                    <h3>Connect with Zernio</h3>
-                    <span>Recommended for simpler setup</span>
-                  </div>
-                  <p>
-                    Use Zernio’s managed Instagram connection instead of
-                    creating and reviewing your own Meta app. Save an API key in
-                    Settings, choose a profile, and connect your account.
-                  </p>
-                  <ul>
-                    <li>No Meta app secrets to configure in OpenReply</li>
-                    <li>OpenReply registers the webhook for you</li>
-                    <li>Optional paid service and project sponsor</li>
-                  </ul>
-                  <a
-                    className="or-text-link"
-                    href={zernioLink({ placement: "landing-setup" })}
-                    rel="sponsored noopener noreferrer"
-                    target="_blank"
-                  >
-                    Explore Zernio <span aria-hidden="true">↗</span>
-                  </a>
-                  <a className="or-provider-guide" href={ZERNIO_DOCS_URL}>
-                    Read setup & feature limits
-                  </a>
-                </article>
+
                 <article>
                   <div className="or-provider-title">
                     <h3>Use your own Meta app</h3>
@@ -365,7 +338,7 @@ export default async function Home() {
                   <ul>
                     <li>Bring your own Meta app and secrets</li>
                     <li>Handle App Review where required</li>
-                    <li>No Zernio account or subscription needed</li>
+                    <li>No connection-provider subscription needed</li>
                   </ul>
                   <a
                     className="or-text-link"
@@ -393,7 +366,7 @@ export default async function Home() {
                     Yes. OpenReply is MIT-licensed software with no software
                     subscription or seat limits. You pay for your own
                     infrastructure and any optional services you choose,
-                    including Zernio.
+                    such as a managed connection provider.
                   </p>
                 </details>
                 <details>
@@ -405,23 +378,7 @@ export default async function Home() {
                     processes, the databases, and your provider choice.
                   </p>
                 </details>
-                <details>
-                  <summary>Do I need Zernio?</summary>
-                  <p>
-                    No. Zernio is an optional paid connection provider and
-                    sponsor. It can spare you setting up your own Meta app,
-                    while OpenReply still runs on your infrastructure. The
-                    direct Meta path stays available.{" "}
-                    <a
-                      href={zernioLink({ placement: "landing-faq" })}
-                      rel="sponsored noopener noreferrer"
-                      target="_blank"
-                    >
-                      Learn about Zernio
-                    </a>
-                    .
-                  </p>
-                </details>
+
                 <details>
                   <summary>Which Instagram accounts can I connect?</summary>
                   <p>
@@ -430,18 +387,7 @@ export default async function Home() {
                     Instagram’s platform policies still apply.
                   </p>
                 </details>
-                <details>
-                  <summary>Are there differences between providers?</summary>
-                  <p>
-                    Yes. With Zernio, the post picker shows the latest 25 posts.
-                    Reporting needs its analytics add-on and synced data, and
-                    follower snapshots can be up to 24 hours old. Inbox previews
-                    are omitted when message direction is unavailable; opening
-                    threads and replying are supported. Read the{" "}
-                    <a href={ZERNIO_DOCS_URL}>provider guide</a> before
-                    choosing.
-                  </p>
-                </details>
+
               </div>
             </section>
           </div>
@@ -483,7 +429,66 @@ export default async function Home() {
               MIT licensed · Built by{" "}
               <a href="https://diwenhuang.ca">Diwen Huang</a>
             </span>
-            <SponsorCredit placement="landing-footer" />
+            <details className="or-sponsor-details">
+              <summary>Supported by Zernio · Optional paid provider</summary>
+              <SponsorCredit placement="landing-footer" />
+                <article className="or-provider-zernio">
+                  <div className="or-provider-title">
+                    <h3>Connect with Zernio</h3>
+                    <span>Recommended for simpler setup</span>
+                  </div>
+                  <p>
+                    Use Zernio’s managed Instagram connection instead of
+                    creating and reviewing your own Meta app. Save an API key in
+                    Settings, choose a profile, and connect your account.
+                  </p>
+                  <ul>
+                    <li>No Meta app secrets to configure in OpenReply</li>
+                    <li>OpenReply registers the webhook for you</li>
+                    <li>Optional paid service and project sponsor</li>
+                  </ul>
+                  <a
+                    className="or-text-link"
+                    href={zernioLink({ placement: "landing-setup" })}
+                    rel="sponsored noopener noreferrer"
+                    target="_blank"
+                  >
+                    Explore Zernio <span aria-hidden="true">↗</span>
+                  </a>
+                  <a className="or-provider-guide" href={ZERNIO_DOCS_URL}>
+                    Read setup & feature limits
+                  </a>
+                </article>
+                <details>
+                  <summary>Do I need Zernio?</summary>
+                  <p>
+                    No. Zernio is an optional paid connection provider and
+                    sponsor. It can spare you setting up your own Meta app,
+                    while OpenReply still runs on your infrastructure. The
+                    direct Meta path stays available.{" "}
+                    <a
+                      href={zernioLink({ placement: "landing-faq" })}
+                      rel="sponsored noopener noreferrer"
+                      target="_blank"
+                    >
+                      Learn about Zernio
+                    </a>
+                    .
+                  </p>
+                </details>
+                <details>
+                  <summary>Are there differences between providers?</summary>
+                  <p>
+                    Yes. With Zernio, the post picker shows the latest 25 posts.
+                    Reporting needs its analytics add-on and synced data, and
+                    follower snapshots can be up to 24 hours old. Inbox previews
+                    are omitted when message direction is unavailable; opening
+                    threads and replying are supported. Read the{" "}
+                    <a href={ZERNIO_DOCS_URL}>provider guide</a> before
+                    choosing.
+                  </p>
+                </details>
+            </details>
           </div>
         </div>
       </footer>
