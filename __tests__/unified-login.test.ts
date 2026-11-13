@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { exchangeCodeForToken, getAuthorizationUrl } from "@/lib/meta/oauth";
 import {
   getAssignedInstagramAccounts, getLongLivedToken, getUserMedia,
-  refreshLongLivedToken, sendPrivateReplyWithButton,
+  refreshLongLivedToken, sendPrivateReplyWithButton, subscribeInstagramAccountToWebhooks,
 } from "@/lib/meta/client";
 
 const fetchMock = vi.fn();
@@ -76,6 +76,12 @@ describe("Unified Login transport", () => {
     respond({ recipient_id: "recipient", message_id: "message" });
     await sendPrivateReplyWithButton("token", "111", "comment", "hello", "Open", "reveal:test");
     expect(new URL(fetchMock.mock.calls[0][0]).origin).toBe("https://graph.facebook.com");
+  });
+  it("subscribes Unified accounts to button taps as well as comments and DMs", async () => {
+    respond({ success: true });
+    await subscribeInstagramAccountToWebhooks("111", "token");
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body).subscribed_fields)
+      .toEqual(["comments", "messages", "messaging_postbacks"]);
   });
   it("keeps the older login transport when Unified Login is disabled", async () => {
     vi.stubEnv("META_LOGIN_CONFIG_ID", "");
